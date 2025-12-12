@@ -2288,6 +2288,8 @@ function ProdutosTab() {
   const startInlineEdit = (product: Product) => {
     setEditingRowId(product.id);
     setEditRowData({
+      name: product.name,
+      description: product.description || '',
       costPrice: product.costPrice,
       salePrice: product.salePrice,
       profitMargin: product.profitMargin,
@@ -2306,6 +2308,8 @@ function ProdutosTab() {
     inlineUpdateMutation.mutate({
       id: productId,
       data: {
+        name: editRowData.name,
+        description: editRowData.description || null,
         costPrice: String(parseFloat(editRowData.costPrice) || 0),
         salePrice: String(parseFloat(editRowData.salePrice) || 0),
         profitMargin: String(parseFloat(editRowData.profitMargin) || 0),
@@ -2823,12 +2827,31 @@ function ProdutosTab() {
                                     )}
                                   </TableCell>
                                   <TableCell>
-                                    <div>
-                                      <p className="font-medium">{product.name}</p>
-                                      {product.description && (
-                                        <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>
-                                      )}
-                                    </div>
+                                    {isEditing ? (
+                                      <div className="space-y-1">
+                                        <Input
+                                          value={editRowData?.name || ''}
+                                          onChange={(e) => setEditRowData(prev => prev ? { ...prev, name: e.target.value } : null)}
+                                          className="h-8 text-sm font-medium"
+                                          placeholder="Nome do produto"
+                                          data-testid={`input-name-${product.id}`}
+                                        />
+                                        <Input
+                                          value={editRowData?.description || ''}
+                                          onChange={(e) => setEditRowData(prev => prev ? { ...prev, description: e.target.value } : null)}
+                                          className="h-7 text-xs"
+                                          placeholder="Descricao (opcional)"
+                                          data-testid={`input-description-${product.id}`}
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div>
+                                        <p className="font-medium">{product.name}</p>
+                                        {product.description && (
+                                          <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>
+                                        )}
+                                      </div>
+                                    )}
                                   </TableCell>
                                   <TableCell className="text-right">
                                     {isEditing ? (
