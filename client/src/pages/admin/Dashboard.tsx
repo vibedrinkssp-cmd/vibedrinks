@@ -2357,19 +2357,38 @@ function ProdutosTab() {
       return;
     }
 
+    const saved = localStorage.getItem('vibe-drinks-user');
+    let userId = null;
+    if (saved) {
+      try {
+        const user = JSON.parse(saved);
+        userId = user.id;
+      } catch {}
+    }
+
+    if (!userId) {
+      toast({ title: 'Erro', description: 'Usuario nao autenticado', variant: 'destructive' });
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('folder', 'products');
 
     try {
-      const response = await fetch('/api/upload', {
+      const response = await fetch('/api/storage/upload', {
         method: 'POST',
+        headers: {
+          'x-user-id': userId,
+        },
         body: formData,
       });
       const result = await response.json();
       if (response.ok && result.publicUrl) {
         setEditRowData(prev => prev ? { ...prev, imageUrl: result.publicUrl } : null);
         toast({ title: 'Imagem carregada!' });
+      } else {
+        toast({ title: 'Erro', description: result.error || 'Falha no upload', variant: 'destructive' });
       }
     } catch (error) {
       toast({ title: 'Erro ao carregar imagem', variant: 'destructive' });
