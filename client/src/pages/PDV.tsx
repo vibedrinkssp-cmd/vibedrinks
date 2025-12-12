@@ -17,7 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  Percent
+  Percent,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -61,6 +62,7 @@ export default function PDV() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [manualDiscount, setManualDiscount] = useState('');
+  const [stockAlertProduct, setStockAlertProduct] = useState<Product | null>(null);
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['/api/products'],
@@ -109,6 +111,14 @@ export default function PDV() {
   });
 
   const addToCart = (product: Product) => {
+    const existingItem = cart.find(item => item.product.id === product.id);
+    const currentQty = existingItem?.quantity ?? 0;
+    
+    if (product.stock <= 0 || currentQty >= product.stock) {
+      setStockAlertProduct(product);
+      return;
+    }
+    
     setCart(prev => {
       const existing = prev.find(item => item.product.id === product.id);
       if (existing) {
@@ -123,6 +133,12 @@ export default function PDV() {
   };
 
   const updateQuantity = (productId: string, delta: number) => {
+    const item = cart.find(i => i.product.id === productId);
+    if (item && delta > 0 && item.quantity >= item.product.stock) {
+      setStockAlertProduct(item.product);
+      return;
+    }
+    
     setCart(prev => {
       return prev.map(item => {
         if (item.product.id === productId) {
@@ -529,6 +545,27 @@ export default function PDV() {
               data-testid="button-confirm-payment"
             >
               {createOrderMutation.isPending ? 'Processando...' : 'Confirmar Pagamento'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!stockAlertProduct} onOpenChange={() => setStockAlertProduct(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Estoque Insuficiente
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-base">
+              O produto <strong>{stockAlertProduct?.name}</strong> esta com estoque zerado ou voce ja adicionou a quantidade maxima disponivel ({stockAlertProduct?.stock ?? 0} unidades).
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={() => setStockAlertProduct(null)} data-testid="button-close-stock-alert">
+              Entendi
             </Button>
           </div>
         </DialogContent>

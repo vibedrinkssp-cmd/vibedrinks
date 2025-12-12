@@ -64,6 +64,18 @@ export function SpecialDrinksModal({ open, onOpenChange }: SpecialDrinksModalPro
   };
 
   const handleAddToCart = (product: Product) => {
+    const cartItem = items.find(i => i.productId === product.id);
+    const currentQty = cartItem?.quantity ?? 0;
+    
+    if (product.stock <= 0 || currentQty >= product.stock) {
+      toast({
+        title: 'Estoque Insuficiente',
+        description: `O produto ${product.name} esta com estoque zerado ou voce ja adicionou a quantidade maxima disponivel.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     addItem(product);
     toast({
       title: 'Adicionado ao carrinho',

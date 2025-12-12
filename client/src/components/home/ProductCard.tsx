@@ -1,7 +1,9 @@
-import { Plus, Minus, ShoppingBag } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Minus, ShoppingBag, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useCart } from '@/lib/cart';
 import { motion } from 'framer-motion';
 import type { Product } from '@shared/schema';
@@ -12,6 +14,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { items, addItem, updateQuantity } = useCart();
+  const [showStockAlert, setShowStockAlert] = useState(false);
   const cartItem = items.find(item => item.productId === product.id);
   const quantity = cartItem?.quantity ?? 0;
 
@@ -24,6 +27,14 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const isOutOfStock = product.stock <= 0;
   const isLowStock = product.stock > 0 && product.stock <= 5;
+
+  const handleAddItem = () => {
+    if (product.stock <= 0 || quantity >= product.stock) {
+      setShowStockAlert(true);
+      return;
+    }
+    addItem(product);
+  };
 
   return (
     <motion.div
@@ -135,7 +146,8 @@ export function ProductCard({ product }: ProductCardProps) {
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9 rounded-md text-primary hover:bg-primary/20"
-                    onClick={() => addItem(product)}
+                    onClick={handleAddItem}
+                    disabled={quantity >= product.stock}
                     data-testid={`button-increase-${product.id}`}
                   >
                     <Plus className="h-4 w-4" />
@@ -144,7 +156,7 @@ export function ProductCard({ product }: ProductCardProps) {
               ) : (
                 <Button
                   className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-semibold hover:from-amber-400 hover:to-yellow-400 transition-all duration-300"
-                  onClick={() => addItem(product)}
+                  onClick={handleAddItem}
                   data-testid={`button-add-${product.id}`}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -155,6 +167,25 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
       </Card>
+
+      <Dialog open={showStockAlert} onOpenChange={setShowStockAlert}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Produto Esgotado
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              O estoque de <strong>{product.name}</strong> esta zerado ou voce ja adicionou a quantidade maxima disponivel ({product.stock} unidades).
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowStockAlert(false)} data-testid="button-close-stock-alert">
+              Entendi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
